@@ -38,7 +38,7 @@ Boston, MA 02111-1307, USA.  */
 #include <osmocom/vty/vty.h>
 #include <osmocom/vty/command.h>
 
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 
 #define CONFIGFILE_MASK 022
 

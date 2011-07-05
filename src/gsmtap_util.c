@@ -26,7 +26,7 @@
 #include <osmocom/core/logging.h>
 #include <osmocom/core/gsmtap.h>
 #include <osmocom/core/msgb.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/select.h>
 #include <osmocom/core/socket.h>
 #include <osmocom/gsm/protocol/gsm_04_08.h>

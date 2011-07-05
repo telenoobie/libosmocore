@@ -33,7 +33,7 @@
 #include <strings.h>
 #endif
 
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/utils.h>
 #include <osmocom/core/logging.h>
 

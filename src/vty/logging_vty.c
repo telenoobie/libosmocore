@@ -24,7 +24,7 @@
 
 #include "../../config.h"
 
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/logging.h>
 #include <osmocom/core/utils.h>
 

@@ -34,7 +34,7 @@
 #include <time.h>
 #include <errno.h>
 
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/utils.h>
 #include <osmocom/core/logging.h>
 

@@ -25,7 +25,7 @@
 
 #include <osmocom/core/msgb.h>
 //#include <openbsc/gsm_data.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 //#include <openbsc/debug.h>
 
 void *tall_msgb_ctx;

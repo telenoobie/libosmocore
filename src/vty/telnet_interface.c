@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include <osmocom/core/msgb.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/logging.h>
 
 #include <osmocom/vty/telnet_interface.h>

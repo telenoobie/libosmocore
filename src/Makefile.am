@@ -9,6 +9,8 @@ AM_CFLAGS = -fPIC -Wall
 
 lib_LTLIBRARIES = libosmocore.la
 
+libosmocore_la_LIBADD = ${LIBTALLOC_LIBS}
+
 libosmocore_la_SOURCES = timer.c select.c signal.c msgb.c bits.c \
 			 bitvec.c statistics.c \
 			 write_queue.c utils.c socket.c \
@@ -21,10 +23,6 @@ libosmocore_la_SOURCES += plugin.c
 libosmocore_la_LDFLAGS = -version-info $(LIBVERSION) -ldl
 else
 libosmocore_la_LDFLAGS = -version-info $(LIBVERSION)
-endif
-
-if ENABLE_TALLOC
-libosmocore_la_SOURCES += talloc.c
 endif
 
 if ENABLE_MSGFILE

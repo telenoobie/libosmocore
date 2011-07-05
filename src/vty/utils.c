@@ -24,7 +24,7 @@
 #include <inttypes.h>
 
 #include <osmocom/core/linuxlist.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/timer.h>
 #include <osmocom/core/rate_ctr.h>
 

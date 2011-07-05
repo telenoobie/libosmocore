@@ -22,7 +22,7 @@
  */
 
 #include <osmocom/core/msgfile.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>

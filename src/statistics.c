@@ -23,7 +23,7 @@
 #include <string.h>
 
 #include <osmocom/core/linuxlist.h>
-#include <osmocom/core/talloc.h>
+#include <talloc.h>
 #include <osmocom/core/statistics.h>
 
 static LLIST_HEAD(counters);

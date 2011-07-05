@@ -34,14 +34,6 @@ AC_SUBST(SYMBOL_VISIBILITY)
 dnl Generate the output
 AM_CONFIG_HEADER(config.h)
 
-AC_ARG_ENABLE(talloc,
-	[AS_HELP_STRING(
-		[--disable-talloc],
-		[Disable building talloc memory allocator]
-	)],
-	[enable_talloc=0], [enable_talloc=1])
-AM_CONDITIONAL(ENABLE_TALLOC, test "x$enable_talloc" = "x1")
-
 AC_ARG_ENABLE(plugin,
 	[AS_HELP_STRING(
 		[--disable-plugin],
@@ -96,6 +88,7 @@ AC_ARG_ENABLE(msgfile,
 	[enable_msgfile=0], [enable_msgfile=1])
 AM_CONDITIONAL(ENABLE_MSGFILE, test "x$enable_msgfile" = "x1")
 
+PKG_CHECK_MODULES([LIBTALLOC], [talloc >= 2.0.1])
 
 AC_OUTPUT(
 	libosmocore.pc
