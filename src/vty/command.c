@@ -405,6 +405,146 @@ const char *cmd_prompt(enum node_type node)
 	return cnode->prompt;
 }
 
+static char *xml_escape(const char *inp)
+{
+	int _strlen;
+	char *out, *out_ptr;
+	int len = 0, i, j;
+
+	if (!inp)
+		return NULL;
+	_strlen = strlen(inp);
+
+	for (i = 0; i < _strlen; ++i) {
+		switch (inp[i]) {
+		case '"':
+			len += 6;
+			break;
+		case '\'':
+			len += 6;
+			break;
+		case '<':
+			len += 4;
+			break;
+		case '>':
+			len += 4;
+			break;
+		case '&':
+			len += 5;
+			break;
+		default:
+			len += 1;
+			break;
+		}
+	}
+
+	out = talloc_size(NULL, len + 1);
+	if (!out)
+		return NULL;
+
+	out_ptr = out;
+
+#define ADD(out, str) \
+	for (j = 0; j < strlen(str); ++j) \
+		*(out++) = str[j];
+
+	for (i = 0; i < _strlen; ++i) {
+		switch (inp[i]) {
+		case '"':
+			ADD(out_ptr, "&quot;");
+			break;
+		case '\'':
+			ADD(out_ptr, "&apos;");
+			break;
+		case '<':
+			ADD(out_ptr, "&lt;");
+			break;
+		case '>':
+			ADD(out_ptr, "&gt;");
+			break;
+		case '&':
+			ADD(out_ptr, "&amp;");
+			break;
+		default:
+			*(out_ptr++) = inp[i];
+			break;
+		}
+	}
+
+#undef ADD
+
+	out_ptr[0] = '\0';
+	return out;
+}
+
+/*
+ * I write one node... having a hash to remember which commands
+ * have been dumped would be nice to avoid dumping commands twice...
+ */
+int vty_dump_element(struct cmd_element *cmd, struct vty *vty)
+{
+	char *xml_string = xml_escape(cmd->string);
+
+	vty_out(vty, "    <command id='%s'>%s", xml_string, VTY_NEWLINE);
+	vty_out(vty, "      <params>%s", VTY_NEWLINE);
+
+	int j;
+	for (j = 0; j < vector_count(cmd->strvec); ++j) {
+		vector descvec = vector_slot(cmd->strvec, j);
+		int i;
+		for (i = 0; i < vector_active(descvec); ++i) {
+			char *xml_param, *xml_doc;
+			struct desc *desc = vector_slot(descvec, i);
+			if (desc == NULL)
+				continue;
+
+			xml_param = xml_escape(desc->cmd);
+			xml_doc = xml_escape(desc->str);
+			vty_out(vty, "        <param name='%s' doc='%s' />%s",
+				xml_param, xml_doc, VTY_NEWLINE);
+			talloc_free(xml_param);
+			talloc_free(xml_doc);
+		}
+	}
+
+	vty_out(vty, "      </params>%s", VTY_NEWLINE);
+	vty_out(vty, "    </command>%s", VTY_NEWLINE);
+
+	talloc_free(xml_string);
+	return 0;
+}
+
+/*! \brief Dump the command on in XML on the vty
+ * \param vty The VTY to dump the documentation on
+ */
+int vty_dump_nodes(struct vty *vty)
+{
+	int i, j;
+
+	vty_out(vty, "<vtydoc xmlns='urn:osmocom:xml:libosmocore:vty:doc:1.0'>%s", VTY_NEWLINE);
+
+	for (i = 0; i < vector_active(cmdvec); ++i) {
+		struct cmd_node *cnode;
+		cnode = vector_slot(cmdvec, i);
+		if (!cnode)
+			continue;
+
+		vty_out(vty, "  <node id='%d'>%s", i, VTY_NEWLINE);
+
+		for (j = 0; j < vector_active(cnode->cmd_vector); ++j) {
+			struct cmd_element *elem;
+			elem = vector_slot(cnode->cmd_vector, j);
+			vty_dump_element(elem, vty);
+		}
+
+		vty_out(vty, "  </node>%s", VTY_NEWLINE);
+	}
+
+	vty_out(vty, "</vtydoc>%s", VTY_NEWLINE);
+
+	return 0;
+}
+
 /*! \brief Install a command into a node
  *  \param[in] ntype Node Type
  *  \param[cmd] element to be installed

@@ -184,6 +184,7 @@ void vty_hello (struct vty *);
 void *vty_current_index(struct vty *);
 int vty_current_node(struct vty *vty);
 enum node_type vty_go_parent(struct vty *vty);
+int vty_dump_nodes(struct vty *vty);
 
 extern void *tall_vty_ctx;
 
