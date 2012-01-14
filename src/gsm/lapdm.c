@@ -791,8 +791,7 @@ static int rslms_rx_rll_est_req(struct msgb *msg, struct lapdm_datalink *dl)
 
 	/* Remove RLL header from msgb and set length to L3-info */
 	msgb_pull_l2h(msg);
-	msg->len = length;
-	msg->tail = msg->l3h + length;
+	msgb_l3trim(msg, length);
 
 	/* prepare prim */
 	osmo_prim_init(&dp.oph, 0, PRIM_DL_EST, PRIM_OP_REQUEST, msg);
@@ -844,8 +843,7 @@ static int rslms_rx_rll_udata_req(struct msgb *msg, struct lapdm_datalink *dl)
 
 	/* Remove RLL header from msgb and set length to L3-info */
 	msgb_pull_l2h(msg);
-	msg->len = length;
-	msg->tail = msg->l3h + length;
+	msgb_l3trim(msg, length);
 
 	/* Push L1 + LAPDm header on msgb */
 	msg->l2h = msgb_push(msg, 4 + !ui_bts);
@@ -880,8 +878,7 @@ static int rslms_rx_rll_data_req(struct msgb *msg, struct lapdm_datalink *dl)
 
 	/* Remove RLL header from msgb and set length to L3-info */
 	msgb_pull_l2h(msg);
-	msg->len = length;
-	msg->tail = msg->l3h + length;
+	msgb_l3trim(msg, length);
 
 	/* prepare prim */
 	osmo_prim_init(&dp.oph, 0, PRIM_DL_DATA, PRIM_OP_REQUEST, msg);
@@ -937,8 +934,7 @@ static int rslms_rx_rll_res_req(struct msgb *msg, struct lapdm_datalink *dl)
 
 	/* Remove RLL header from msgb and set length to L3-info */
 	msgb_pull_l2h(msg);
-	msg->len = length;
-	msg->tail = msg->l3h + length;
+	msgb_l3trim(msg, length);
 
 	/* prepare prim */
 	osmo_prim_init(&dp.oph, 0, (msg_type == RSL_MT_RES_REQ) ? PRIM_DL_RES
