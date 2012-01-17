@@ -183,10 +183,12 @@ AC_OUTPUT(
 	libosmovty.pc
 	libosmogsm.pc
 	libosmogb.pc
+	libosmosim.pc
 	include/Makefile
 	src/Makefile
 	src/vty/Makefile
 	src/codec/Makefile
+	src/sim/Makefile
 	src/gsm/Makefile
 	src/gb/Makefile
 	tests/Makefile
