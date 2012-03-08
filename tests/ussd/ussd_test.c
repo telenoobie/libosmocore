@@ -37,13 +37,13 @@ static int parse_ussd(const uint8_t *_data, int len)
 {
 	uint8_t *data;
 	int rc;
-	struct ussd_request req;
+	struct ss_request req;
 	struct gsm48_hdr *hdr;
 
 	data = malloc(len);
 	memcpy(data, _data, len);
 	hdr = (struct gsm48_hdr *) &data[0];
-	rc = gsm0480_decode_ussd_request(hdr, len, &req);
+	rc = gsm0480_decode_ss_request(hdr, len, &req);
 	free(data);
 
 	return rc;
@@ -53,14 +53,14 @@ static int parse_mangle_ussd(const uint8_t *_data, int len)
 {
 	uint8_t *data;
 	int rc;
-	struct ussd_request req;
+	struct ss_request req;
 	struct gsm48_hdr *hdr;
 
 	data = malloc(len);
 	memcpy(data, _data, len);
 	hdr = (struct gsm48_hdr *) &data[0];
 	hdr->data[1] = len - sizeof(*hdr) - 2;
-	rc = gsm0480_decode_ussd_request(hdr, len, &req);
+	rc = gsm0480_decode_ss_request(hdr, len, &req);
 	free(data);
 
 	return rc;
@@ -70,14 +70,14 @@ struct log_info info = {};
 
 int main(int argc, char **argv)
 {
-	struct ussd_request req;
+	struct ss_request req;
 	const int size = sizeof(ussd_request);
 	int i;
 
 	osmo_init_logging(&info);
 
-	gsm0480_decode_ussd_request((struct gsm48_hdr *) ussd_request, size, &req);
-	printf("Tested if it still works. Text was: %s\n", req.text);
+	gsm0480_decode_ss_request((struct gsm48_hdr *) ussd_request, size, &req);
+	printf("Tested if it still works. Text was: %s\n", req.ussd_text);
 
 
 	printf("Testing parsing a USSD request and truncated versions\n");
