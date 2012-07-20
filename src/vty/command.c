@@ -2372,6 +2372,14 @@ DEFUN(show_version,
 	return CMD_SUCCESS;
 }
 
+DEFUN(show_online_help,
+      show_online_help_cmd, "show online-help", SHOW_STR "Online help\n")
+{
+	vty_dump_nodes(vty);
+
+	return CMD_SUCCESS;
+}
+
 /* Help display function for all node. */
 gDEFUN(config_help,
       config_help_cmd, "help", "Description of the interactive help system\n")
@@ -3409,6 +3417,7 @@ void cmd_init(int terminal)
 
 	/* Each node's basic commands. */
 	install_element(VIEW_NODE, &show_version_cmd);
+	install_element(VIEW_NODE, &show_online_help_cmd);
 	if (terminal) {
 		install_element(VIEW_NODE, &config_list_cmd);
 		install_element(VIEW_NODE, &config_exit_cmd);
@@ -3428,6 +3437,7 @@ void cmd_init(int terminal)
 	}
 	install_element (ENABLE_NODE, &show_startup_config_cmd);
 	install_element(ENABLE_NODE, &show_version_cmd);
+	install_element(ENABLE_NODE, &show_online_help_cmd);
 
 	if (terminal) {
 		install_element(ENABLE_NODE, &config_terminal_length_cmd);
