@@ -97,5 +97,11 @@ AT_KEYWORDS([fr])
 cat $abs_srcdir/fr/fr_test.ok > expout
 cat $abs_srcdir/fr/fr_test.err > experr
 AT_CHECK([$abs_top_builddir/tests/fr/fr_test], [], [expout], [experr])
+AT_CLEANUP
 
+AT_SETUP([smc])
+AT_KEYWORDS([smc])
+cat $abs_srcdir/smc/smc_test.ok > expout
+cat $abs_srcdir/smc/smc_test.err > experr
+AT_CHECK([$abs_top_builddir/tests/smc/smc_test], [], [expout], [experr])
 AT_CLEANUP
