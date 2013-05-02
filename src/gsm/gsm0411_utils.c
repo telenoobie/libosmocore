@@ -33,6 +33,7 @@
 #include <osmocom/core/logging.h>
 
 #include <osmocom/gsm/gsm48.h>
+#include <osmocom/gsm/gsm_utils.h>
 #include <osmocom/gsm/protocol/gsm_04_11.h>
 
 #define GSM411_ALLOC_SIZE	1024
@@ -275,10 +276,17 @@ int gsm340_gen_oa(uint8_t *oa, unsigned int oa_len, uint8_t type,
 
 	oa[1] = 0x80 | (type << 4) | plan;
 
-	len_in_bytes = gsm48_encode_bcd_number(oa, oa_len, 1, number);
+	if (type == 0x5) {
+		/* TODO/FIXME: the length could still be wrong. octets or septets? */
+		gsm_7bit_encode_oct(&oa[2], number, &len_in_bytes);
+		oa[0] = len_in_bytes * 2;
+		len_in_bytes += 2;
+	} else {
+		len_in_bytes = gsm48_encode_bcd_number(oa, oa_len, 1, number);
+		/* GSM 03.40 tells us the length is in 'useful semi-octets' */
+		oa[0] = strlen(number) & 0xff;
+	}
 
-	/* GSM 03.40 tells us the length is in 'useful semi-octets' */
-	oa[0] = strlen(number) & 0xff;
 
 	return len_in_bytes;
 }
