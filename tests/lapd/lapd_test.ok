@@ -5,7 +5,7 @@ bts_to_ms_tx_cb: MS->BTS(us) message 25
 BTS: Verifying CM request.
 
 Confirming
-ms_to_bts_tx_cb: BTS->MS(us) message 9
+ms_to_bts_tx_cb: BTS->MS(us) message 6
 MS: Verifying incoming primitive.
 
 Sending back to MS

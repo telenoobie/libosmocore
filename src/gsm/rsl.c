@@ -465,13 +465,14 @@ void rsl_rll_push_hdr(struct msgb *msg, uint8_t msg_type, uint8_t chan_nr,
 void rsl_rll_push_l3(struct msgb *msg, uint8_t msg_type, uint8_t chan_nr,
 		     uint8_t link_id, int transparent)
 {
-	uint8_t l3_len = msg->tail - (uint8_t *)msgb_l3(msg);
-
 	/* construct a RSLms RLL message (DATA INDICATION, UNIT DATA
 	 * INDICATION) and send it off via RSLms */
 
 	/* Push the L3 IE tag and lengh */
-	msgb_tv16_push(msg, RSL_IE_L3_INFO, l3_len);
+	if (msg->l3h) {
+		uint8_t l3_len = msg->tail - (uint8_t *) msgb_l3(msg);
+		msgb_tv16_push(msg, RSL_IE_L3_INFO, l3_len);
+	}
 
 	/* Then push the RSL header */
 	rsl_rll_push_hdr(msg, msg_type, chan_nr, link_id, transparent);
