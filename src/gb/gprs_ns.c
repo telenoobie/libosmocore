@@ -100,15 +100,17 @@ enum ns_ctr {
 	NS_CTR_BYTES_OUT,
 	NS_CTR_BLOCKED,
 	NS_CTR_DEAD,
+	NS_CTR_REPLACED,
 };
 
 static const struct rate_ctr_desc nsvc_ctr_description[] = {
-	{ "packets.in", "Packets at NS Level ( In)" },
-	{ "packets.out","Packets at NS Level (Out)" },
-	{ "bytes.in",	"Bytes at NS Level   ( In)" },
-	{ "bytes.out",	"Bytes at NS Level   (Out)" },
-	{ "blocked",	"NS-VC Block count        " },
-	{ "dead",	"NS-VC gone dead count    " },
+	{ "packets.in", "Packets at NS Level  ( In)" },
+	{ "packets.out","Packets at NS Level  (Out)" },
+	{ "bytes.in",	"Bytes at NS Level    ( In)" },
+	{ "bytes.out",	"Bytes at NS Level    (Out)" },
+	{ "blocked",	"NS-VC Block count         " },
+	{ "dead",	"NS-VC gone dead count     " },
+	{ "replaced",	"NS-VC replaced other count" },
 };
 
 static const struct rate_ctr_group_desc nsvc_ctrg_desc = {
@@ -198,12 +200,22 @@ void gprs_nsvc_delete(struct gprs_nsvc *nsvc)
 static void ns_osmo_signal_dispatch(struct gprs_nsvc *nsvc, unsigned int signal,
 			       uint8_t cause)
 {
-	struct ns_signal_data nssd;
+	struct ns_signal_data nssd = {0};
 
 	nssd.nsvc = nsvc;
 	nssd.cause = cause;
 
 	osmo_signal_dispatch(SS_L_NS, signal, &nssd);
+}
+
+static void ns_osmo_signal_dispatch_replaced(struct gprs_nsvc *nsvc, struct gprs_nsvc *old_nsvc)
+{
+	struct ns_signal_data nssd = {0};
+
+	nssd.nsvc = nsvc;
+	nssd.old_nsvc = old_nsvc;
+
+	osmo_signal_dispatch(SS_L_NS, S_NS_REPLACED, &nssd);
 }
 
 /* Section 10.3.2, Table 13 */
@@ -651,8 +663,9 @@ static int gprs_ns_rx_reset(struct gprs_nsvc *nsvc, struct msgb *msg)
 {
 	struct gprs_ns_hdr *nsh = (struct gprs_ns_hdr *) msg->l2h;
 	struct tlv_parsed tp;
-	uint8_t *cause;
-	uint16_t *nsvci, *nsei;
+	uint8_t cause;
+	uint16_t nsvci, nsei;
+	struct gprs_nsvc *other_nsvc = NULL;
 	int rc;
 
 	rc = tlv_parse(&tp, &ns_att_tlvdef, nsh->data,
@@ -671,22 +684,58 @@ static int gprs_ns_rx_reset(struct gprs_nsvc *nsvc, struct msgb *msg)
 		return -EINVAL;
 	}
 
-	cause = (uint8_t *) TLVP_VAL(&tp, NS_IE_CAUSE);
-	nsvci = (uint16_t *) TLVP_VAL(&tp, NS_IE_VCI);
-	nsei = (uint16_t *) TLVP_VAL(&tp, NS_IE_NSEI);
+	cause = *(uint8_t  *) TLVP_VAL(&tp, NS_IE_CAUSE);
+	nsvci = ntohs(*(uint16_t *) TLVP_VAL(&tp, NS_IE_VCI));
+	nsei  = ntohs(*(uint16_t *) TLVP_VAL(&tp, NS_IE_NSEI));
 
-	LOGP(DNS, LOGL_INFO, "NSEI=%u Rx NS RESET (NSVCI=%u, cause=%s)\n",
-		nsvc->nsvci, nsvc->nsei, gprs_ns_cause_str(*cause));
+	LOGP(DNS, LOGL_INFO, "NSVCI=%u%s Rx NS RESET (NSEI=%u, NSVCI=%u, cause=%s)\n",
+	     nsvc->nsvci, nsvc->nsvci_is_valid ? "" : "(invalid)",
+	     nsei, nsvci, gprs_ns_cause_str(cause));
+
+	if (nsvc->nsvci_is_valid && nsvc->nsvci != nsvci) {
+		/* NS-VCI has changed */
+		other_nsvc = gprs_nsvc_by_nsvci(nsvc->nsi, nsvci);
+
+		if (other_nsvc) {
+			/* The NS-VCI is already used by this NS-VC */
+
+			struct rate_ctr_group *tmp_ctrg;
+			char *old_peer =
+				talloc_strdup(nsvc, gprs_ns_format_peer(other_nsvc));
+
+			LOGP(DNS, LOGL_INFO,
+			     "NS-VC changed link (NSVCI=%u) from %s to %s\n",
+			     nsvci, old_peer, gprs_ns_format_peer(nsvc));
+
+			talloc_free(old_peer);
+
+			/* Exchange the counters */
+			tmp_ctrg = nsvc->ctrg;
+			nsvc->ctrg = talloc_move(nsvc, &other_nsvc->ctrg);
+			other_nsvc->ctrg = talloc_move(other_nsvc, &tmp_ctrg);
+
+			rate_ctr_inc(&nsvc->ctrg->ctr[NS_CTR_REPLACED]);
+		}
+	}
 
 	/* Mark NS-VC as blocked and alive */
 	nsvc->state = NSE_S_BLOCKED | NSE_S_ALIVE;
 
-	nsvc->nsei = ntohs(*nsei);
-	nsvc->nsvci = ntohs(*nsvci);
+	nsvc->nsei  = nsei;
+	nsvc->nsvci = nsvci;
+	nsvc->nsvci_is_valid = 1;
+
+	if (other_nsvc) {
+		ns_osmo_signal_dispatch_replaced(nsvc, other_nsvc);
+
+		/* Delete the 'old' object */
+		gprs_nsvc_delete(other_nsvc);
+		other_nsvc = NULL;
+	}
 
 	/* inform interested parties about the fact that this NSVC
 	 * has received RESET */
-	ns_osmo_signal_dispatch(nsvc, S_NS_RESET, *cause);
+	ns_osmo_signal_dispatch(nsvc, S_NS_RESET, cause);
 
 	rc = gprs_ns_tx_reset_ack(nsvc);
 

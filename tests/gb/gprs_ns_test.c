@@ -155,6 +155,15 @@ static int test_signal(unsigned int subsys, unsigned int signal,
 		       gprs_ns_format_peer(nssd->nsvc));
 		break;
 
+	case S_NS_REPLACED:
+		printf("==> got signal NS_REPLACED: 0x%04x/%s",
+		       nssd->old_nsvc->nsvci,
+		       gprs_ns_format_peer(nssd->old_nsvc));
+		printf(" -> 0x%04x/%s\n",
+		       nssd->nsvc->nsvci,
+		       gprs_ns_format_peer(nssd->nsvc));
+		break;
+
 	default:
 		printf("==> got signal %d, NS-VC 0x%04x/%s\n", signal,
 		       nssd->nsvc->nsvci,
