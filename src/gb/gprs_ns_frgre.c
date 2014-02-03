@@ -31,6 +31,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 
+#include <osmocom/core/endian.h>
 #include <osmocom/core/select.h>
 #include <osmocom/core/msgb.h>
 #include <osmocom/core/talloc.h>
@@ -67,10 +68,10 @@ struct gre_hdr {
  */
 struct iphdr
   {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if OSMO_ENDIAN_LITTLE
     unsigned int ihl:4;
     unsigned int version:4;
-#elif BYTE_ORDER == BIG_ENDIAN
+#elif OSMO_ENDIAN_BIG
     unsigned int version:4;
     unsigned int ihl:4;
 #endif
