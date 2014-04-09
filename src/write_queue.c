@@ -21,7 +21,14 @@
  *
  */
 
+#include <errno.h>
 #include <osmocom/core/write_queue.h>
+
+#define HANDLE_BAD_FD(rc, label) \
+	do { \
+		if (rc == -EBADFD) \
+			goto label; \
+	} while (0);
 
 /*! \addtogroup write_queue
  *  @{
@@ -39,14 +46,19 @@
 int osmo_wqueue_bfd_cb(struct osmo_fd *fd, unsigned int what)
 {
 	struct osmo_wqueue *queue;
+	int rc;
 
 	queue = container_of(fd, struct osmo_wqueue, bfd);
 
-	if (what & BSC_FD_READ)
-		queue->read_cb(fd);
+	if (what & BSC_FD_READ) {
+		rc = queue->read_cb(fd);
+		HANDLE_BAD_FD(rc, err_badfd);
+	}
 
-	if (what & BSC_FD_EXCEPT)
-		queue->except_cb(fd);
+	if (what & BSC_FD_EXCEPT) {
+		rc = queue->except_cb(fd);
+		HANDLE_BAD_FD(rc, err_badfd);
+	}
 
 	if (what & BSC_FD_WRITE) {
 		struct msgb *msg;
@@ -58,8 +70,10 @@ int osmo_wqueue_bfd_cb(struct osmo_fd *fd, unsigned int what)
 			--queue->current_length;
 
 			msg = msgb_dequeue(&queue->msg_queue);
-			queue->write_cb(fd, msg);
+			rc = queue->write_cb(fd, msg);
 			msgb_free(msg);
+
+			HANDLE_BAD_FD(rc, err_badfd);
 
 			if (!llist_empty(&queue->msg_queue))
 				fd->when |= BSC_FD_WRITE;
@@ -67,7 +81,10 @@ int osmo_wqueue_bfd_cb(struct osmo_fd *fd, unsigned int what)
 	}
 
 	return 0;
+err_badfd:
+	return rc;
 }
+#undef HANDLE_BAD_FD
 
 /*! \brief Initialize a \ref osmo_wqueue structure
  *  \param[in] queue Write queue to operate on
